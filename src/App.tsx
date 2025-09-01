@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import TopNav from './components/TopNav';
 import Gallery from './components/Gallery';
+import Login from './components/Login';
 
 type Project = {
   id: number;
@@ -63,8 +64,27 @@ const initialProjects: Project[] = [
   },
 ];
 
+type User = {
+  username: string;
+  password: string;
+  email?: string;
+};
+
 function App() {
   const [wiggleBtn, setWiggleBtn] = useState<string | null>(null);
+  const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([{
+    username: 'demo',
+    password: 'demo123',
+    email: 'demo@example.com',
+  }]);
+  // Login logic
+  const handleLogin = (user: User) => {
+    setLoggedInUser(user);
+  };
+  const handleRegister = (user: User) => {
+    setUsers(prev => [...prev, user]);
+  };
   const [uploadPopup, setUploadPopup] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
@@ -136,6 +156,12 @@ function App() {
     background: hoveredIndex === idx ? '#f3f4f6' : 'none',
   });
 
+  // Logout logic
+  const handleLogout = () => {
+    setLoggedInUser(null);
+    setDropdownOpen(false);
+  };
+
   // Project like/dislike
   const handleLike = (id: number) => {
     setProjects((prev) =>
@@ -163,6 +189,16 @@ function App() {
       contactRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  if (!loggedInUser) {
+    return (
+      <Login
+        onLogin={handleLogin}
+        users={users}
+        onRegister={handleRegister}
+      />
+    );
+  }
 
   return (
     <div style={{
@@ -194,6 +230,8 @@ function App() {
           setHoveredIndex={setHoveredIndex}
           getDropdownItemStyle={getDropdownItemStyle}
           handleContactNavClick={handleContactNavClick}
+          onLogout={handleLogout}
+          loggedInUser={loggedInUser}
         />
         {/* Gallery Section */}
         <Gallery

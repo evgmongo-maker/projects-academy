@@ -1,5 +1,11 @@
 import React from 'react';
 
+interface User {
+  username: string;
+  password: string;
+  email?: string;
+}
+
 interface TopNavProps {
   showAll: boolean;
   setShowAll: (show: boolean) => void;
@@ -8,6 +14,8 @@ interface TopNavProps {
   setHoveredIndex: (idx: number | null) => void;
   getDropdownItemStyle: (idx: number) => React.CSSProperties;
   handleContactNavClick: (e: React.MouseEvent) => void;
+  onLogout: () => void;
+  loggedInUser?: User | null;
 }
 
 const TopNav: React.FC<TopNavProps> = ({
@@ -18,6 +26,8 @@ const TopNav: React.FC<TopNavProps> = ({
   setHoveredIndex,
   getDropdownItemStyle,
   handleContactNavClick,
+  onLogout,
+  loggedInUser,
 }) => (
   <nav style={{
     display: 'flex',
@@ -117,9 +127,15 @@ const TopNav: React.FC<TopNavProps> = ({
             boxShadow: '0 2px 8px rgba(102,126,234,0.10)',
             marginLeft: 12,
             transition: 'background 0.18s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
           }}
           onClick={() => setDropdownOpen(!dropdownOpen)}
-        >Sign In</button>
+        >
+          <span style={{ fontSize: 20, display: 'flex', alignItems: 'center' }} role="img" aria-label="user">👤</span>
+          {loggedInUser ? loggedInUser.username : 'Sign In'}
+        </button>
         {dropdownOpen && (
           <div style={{
             position: 'absolute',
@@ -156,7 +172,7 @@ const TopNav: React.FC<TopNavProps> = ({
               style={getDropdownItemStyle(3)}
               onMouseEnter={() => setHoveredIndex(3)}
               onMouseLeave={() => setHoveredIndex(null)}
-              onClick={() => alert('Log Out clicked')}
+              onClick={onLogout}
             >Log Out</button>
           </div>
         )}
