@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import TopNav from './components/TopNav';
 import Gallery from './components/Gallery';
@@ -73,18 +73,26 @@ type User = {
 function App() {
   const [wiggleBtn, setWiggleBtn] = useState<string | null>(null);
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([{
-    username: 'demo',
-    password: 'demo123',
-    email: 'demo@example.com',
-  }]);
   // Login logic
   const handleLogin = (user: User) => {
     setLoggedInUser(user);
   };
-  const handleRegister = (user: User) => {
-    setUsers(prev => [...prev, user]);
-  };
+
+  // Auto-login if token exists
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && !loggedInUser) {
+      // Option 1: decode token (not secure, but enough for demo)
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload && payload.username && payload.email) {
+          setLoggedInUser({ username: payload.username, email: payload.email, password: '' });
+        }
+      } catch {
+        localStorage.removeItem('token');
+      }
+    }
+  }, [loggedInUser]);
   const [uploadPopup, setUploadPopup] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
@@ -160,6 +168,7 @@ function App() {
   const handleLogout = () => {
     setLoggedInUser(null);
     setDropdownOpen(false);
+    localStorage.removeItem('token');
   };
 
   // Project like/dislike
@@ -194,8 +203,6 @@ function App() {
     return (
       <Login
         onLogin={handleLogin}
-        users={users}
-        onRegister={handleRegister}
       />
     );
   }

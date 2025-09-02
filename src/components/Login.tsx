@@ -8,46 +8,64 @@ interface User {
 
 interface LoginProps {
   onLogin: (user: User) => void;
-  users: User[];
-  onRegister: (user: User) => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, users, onRegister }) => {
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    const user = users.find(u => u.username === username && u.password === password);
-    if (user) {
-      setError('');
-      onLogin(user);
-    } else {
-      setError('Invalid username or password');
+    setError('');
+    try {
+      const res = await fetch('http://localhost:4000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Login failed');
+      } else {
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
+        onLogin(data.user);
+      }
+    } catch (err) {
+      setError('Network error');
     }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     if (!username || !password || !email) {
       setError('All fields are required');
       return;
     }
-    if (users.some(u => u.username === username)) {
-      setError('Username already exists');
-      return;
+    try {
+      const res = await fetch('http://localhost:4000/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, email })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Registration failed');
+      } else {
+        setMode('signin');
+        setUsername('');
+        setPassword('');
+        setEmail('');
+        alert('Account created! Please sign in.');
+      }
+    } catch (err) {
+      setError('Network error');
     }
-    const newUser = { username, password, email };
-    onRegister(newUser);
-    setError('');
-    setMode('signin');
-    setUsername('');
-    setPassword('');
-    setEmail('');
-    alert('Account created! Please sign in.');
   };
 
   return (
