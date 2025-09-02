@@ -82,11 +82,10 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token && !loggedInUser) {
-      // Option 1: decode token (not secure, but enough for demo)
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload && payload.username && payload.email) {
-          setLoggedInUser({ username: payload.username, email: payload.email, password: '' });
+        if (payload && payload.username) {
+          setLoggedInUser({ username: payload.username, email: payload.email || '', password: '' });
         }
       } catch {
         localStorage.removeItem('token');

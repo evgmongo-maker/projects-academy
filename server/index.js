@@ -76,9 +76,9 @@ app.post('/api/login', async (req, res) => {
   if (!isMatch) {
     return res.status(401).json({ error: 'Invalid credentials.' });
   }
-  const token = jwt.sign({ username: user.username }, JWT_SECRET, { expiresIn: '1h' });
-  // Return user info (without password) along with token
-  res.json({ token, user: { username: user.username } });
+    // Include email in JWT payload and response if present
+    const token = jwt.sign({ username: user.username, email: user.email || '' }, JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token, user: { username: user.username, email: user.email || '' } });
 });
 
 app.listen(PORT, () => {
