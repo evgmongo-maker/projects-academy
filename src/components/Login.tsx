@@ -13,14 +13,19 @@ interface LoginProps {
 	onLogin: (user: User) => void;
 }
 
+
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
 	const [username, setUsername] = useState('');
 	const [password, setPassword] = useState('');
+	const [email, setEmail] = useState('');
 	const [error, setError] = useState('');
+	const [isSignUp, setIsSignUp] = useState(false);
+	const [success, setSuccess] = useState('');
 
 	const handleSignIn = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setError('');
+		setSuccess('');
 		try {
 			const response = await fetch('http://localhost:4000/api/login', {
 				method: 'POST',
@@ -49,6 +54,35 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 				setError(err.message || 'Login failed');
 			} else {
 				setError('Login failed');
+			}
+		}
+	};
+
+	const handleSignUp = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setError('');
+		setSuccess('');
+		try {
+			const response = await fetch('http://localhost:4000/api/register', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ username, password }),
+			});
+			if (!response.ok) {
+				const data = await response.json();
+				throw new Error(data.error || 'Registration failed');
+			}
+			setSuccess('Registration successful! You can now log in.');
+			setIsSignUp(false);
+			setUsername('');
+			setPassword('');
+		} catch (err: unknown) {
+			if (err instanceof Error) {
+				setError(err.message || 'Registration failed');
+			} else {
+				setError('Registration failed');
 			}
 		}
 	};
@@ -95,7 +129,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 					zIndex: 1,
 				}}
 			/>
-			{/* Centered login form */}
+			{/* Centered login/signup form */}
 			<div
 				style={{
 					position: 'relative',
@@ -130,116 +164,235 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 						<ellipse cx="20" cy="30" rx="12" ry="7" fill="#fff" fillOpacity="0.7" />
 					</svg>
 				</div>
-				{/* Login form fields */}
-				<form onSubmit={handleSignIn} style={{ width: '100%' }}>
-					<div style={{ position: 'relative', marginBottom: 24 }}>
-						{/* Username icon */}
-						<span style={{
-							position: 'absolute',
-							left: 16,
-							top: '50%',
-							transform: 'translateY(-50%)',
-							color: '#2563eb',
-							opacity: 0.85,
-							fontSize: 22,
-							display: 'flex',
-							alignItems: 'center',
-							zIndex: 2,
-						}}>
-							<svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path fill="#2563eb" d="M12 12c2.7 0 8 1.34 8 4v2H4v-2c0-2.66 5.3-4 8-4Zm0-2a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/></svg>
-						</span>
-						<input
-							type="text"
-							placeholder="Username"
-							value={username}
-							onChange={e => setUsername(e.target.value)}
+				{/* Login or Sign Up form fields */}
+				{isSignUp ? (
+					<form onSubmit={handleSignUp} style={{ width: '100%' }}>
+						<div style={{ position: 'relative', marginBottom: 24 }}>
+							{/* Username icon */}
+							<span style={{
+								position: 'absolute',
+								left: 16,
+								top: '50%',
+								transform: 'translateY(-50%)',
+								color: '#2563eb',
+								opacity: 0.85,
+								fontSize: 22,
+								display: 'flex',
+								alignItems: 'center',
+								zIndex: 2,
+							}}>
+								<svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path fill="#2563eb" d="M12 12c2.7 0 8 1.34 8 4v2H4v-2c0-2.66 5.3-4 8-4Zm0-2a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/></svg>
+							</span>
+							<input
+								type="text"
+								placeholder="Username"
+								value={username}
+								onChange={e => setUsername(e.target.value)}
+								style={{
+									width: '100%',
+									padding: '14px 16px 14px 48px',
+									border: '1.5px solid #fff',
+									borderRadius: 8,
+									background: 'rgba(255,255,255,0.10)',
+									color: '#fff',
+									fontSize: 18,
+									outline: 'none',
+									marginBottom: 0,
+									boxSizing: 'border-box',
+									fontWeight: 400,
+									letterSpacing: 0.5,
+								}}
+								autoComplete="username"
+								required
+							/>
+						</div>
+						<div style={{ position: 'relative', marginBottom: 16 }}>
+							{/* Password icon */}
+							<span style={{
+								position: 'absolute',
+								left: 16,
+								top: '50%',
+								transform: 'translateY(-50%)',
+								color: '#2563eb',
+								opacity: 0.85,
+								fontSize: 22,
+								display: 'flex',
+								alignItems: 'center',
+								zIndex: 2,
+							}}>
+								<svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path fill="#2563eb" d="M12 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm6-2V9a6 6 0 1 0-12 0v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2Zm-2 0H8V9a4 4 0 1 1 8 0v6Z"/></svg>
+							</span>
+							<input
+								type="password"
+								placeholder="************"
+								value={password}
+								onChange={e => setPassword(e.target.value)}
+								style={{
+									width: '100%',
+									padding: '14px 16px 14px 48px',
+									border: '1.5px solid #fff',
+									borderRadius: 8,
+									background: 'rgba(255,255,255,0.10)',
+									color: '#fff',
+									fontSize: 18,
+									outline: 'none',
+									marginBottom: 0,
+									boxSizing: 'border-box',
+									fontWeight: 400,
+									letterSpacing: 1,
+								}}
+								autoComplete="new-password"
+								required
+							/>
+						</div>
+						{error && <div style={{ color: '#e53e3e', marginBottom: 12, fontWeight: 500, textAlign: 'center' }}>{error}</div>}
+						{success && <div style={{ color: '#38a169', marginBottom: 12, fontWeight: 500, textAlign: 'center' }}>{success}</div>}
+						<button
+							type="submit"
 							style={{
 								width: '100%',
-								padding: '14px 16px 14px 48px',
-								border: '1.5px solid #fff',
-								borderRadius: 8,
-								background: 'rgba(255,255,255,0.10)',
+								padding: '12px 0',
+								borderRadius: 24,
+								border: 'none',
+								background: 'linear-gradient(90deg, #2563eb 0%, #60a5fa 100%)',
 								color: '#fff',
-								fontSize: 18,
-								outline: 'none',
+								fontSize: 20,
+								fontWeight: 500,
+								boxShadow: '0 0 16px 2px #2563eb55',
+								cursor: 'pointer',
+								transition: 'background 0.2s',
+								marginTop: 8,
 								marginBottom: 0,
-								boxSizing: 'border-box',
-								fontWeight: 400,
-								letterSpacing: 0.5,
-							}}
-							autoComplete="username"
-							required
-						/>
-					</div>
-					<div style={{ position: 'relative', marginBottom: 16 }}>
-						{/* Password icon */}
-						<span style={{
-							position: 'absolute',
-							left: 16,
-							top: '50%',
-							transform: 'translateY(-50%)',
-							color: '#2563eb',
-							opacity: 0.85,
-							fontSize: 22,
-							display: 'flex',
-							alignItems: 'center',
-							zIndex: 2,
-						}}>
-							<svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path fill="#2563eb" d="M12 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm6-2V9a6 6 0 1 0-12 0v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2Zm-2 0H8V9a4 4 0 1 1 8 0v6Z"/></svg>
-						</span>
-						<input
-							type="password"
-							placeholder="************"
-							value={password}
-							onChange={e => setPassword(e.target.value)}
-							style={{
-								width: '100%',
-								padding: '14px 16px 14px 48px',
-								border: '1.5px solid #fff',
-								borderRadius: 8,
-								background: 'rgba(255,255,255,0.10)',
-								color: '#fff',
-								fontSize: 18,
-								outline: 'none',
-								marginBottom: 0,
-								boxSizing: 'border-box',
-								fontWeight: 400,
 								letterSpacing: 1,
 							}}
-							autoComplete="current-password"
-							required
-						/>
-					</div>
-					<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, marginTop: 2 }}>
-						<label style={{ color: '#fff', opacity: 0.85, fontSize: 15, display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-							<input type="checkbox" style={{ marginRight: 6, accentColor: '#2563eb' }} />
-							Remember Me
-						</label>
-						<a href="#" style={{ color: '#60a5fa', fontSize: 15, textDecoration: 'none', opacity: 0.95 }}>Forgot Password?</a>
-					</div>
-					{error && <div style={{ color: '#e53e3e', marginBottom: 12, fontWeight: 500, textAlign: 'center' }}>{error}</div>}
-					<button
-						type="submit"
-						style={{
-							width: '100%',
-							padding: '12px 0',
-							borderRadius: 24,
-							border: 'none',
-							background: 'linear-gradient(90deg, #2563eb 0%, #60a5fa 100%)',
-							color: '#fff',
-							fontSize: 20,
-							fontWeight: 500,
-							boxShadow: '0 0 16px 2px #2563eb55',
-							cursor: 'pointer',
-							transition: 'background 0.2s',
-							marginTop: 8,
-							marginBottom: 0,
-							letterSpacing: 1,
-						}}
-					>
-						Login
-					</button>
-				</form>
+						>
+							Sign Up
+						</button>
+						<div style={{ marginTop: 18, textAlign: 'center' }}>
+							<span style={{ color: '#fff', opacity: 0.85, fontSize: 15 }}>
+								Already have an account?{' '}
+								<button type="button" style={{ color: '#60a5fa', background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, textDecoration: 'underline', padding: 0 }} onClick={() => { setIsSignUp(false); setError(''); setSuccess(''); }}>Login</button>
+							</span>
+						</div>
+					</form>
+				) : (
+					<form onSubmit={handleSignIn} style={{ width: '100%' }}>
+						<div style={{ position: 'relative', marginBottom: 24 }}>
+							{/* Username icon */}
+							<span style={{
+								position: 'absolute',
+								left: 16,
+								top: '50%',
+								transform: 'translateY(-50%)',
+								color: '#2563eb',
+								opacity: 0.85,
+								fontSize: 22,
+								display: 'flex',
+								alignItems: 'center',
+								zIndex: 2,
+							}}>
+								<svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path fill="#2563eb" d="M12 12c2.7 0 8 1.34 8 4v2H4v-2c0-2.66 5.3-4 8-4Zm0-2a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/></svg>
+							</span>
+							<input
+								type="text"
+								placeholder="Username"
+								value={username}
+								onChange={e => setUsername(e.target.value)}
+								style={{
+									width: '100%',
+									padding: '14px 16px 14px 48px',
+									border: '1.5px solid #fff',
+									borderRadius: 8,
+									background: 'rgba(255,255,255,0.10)',
+									color: '#fff',
+									fontSize: 18,
+									outline: 'none',
+									marginBottom: 0,
+									boxSizing: 'border-box',
+									fontWeight: 400,
+									letterSpacing: 0.5,
+								}}
+								autoComplete="username"
+								required
+							/>
+						</div>
+						<div style={{ position: 'relative', marginBottom: 16 }}>
+							{/* Password icon */}
+							<span style={{
+								position: 'absolute',
+								left: 16,
+								top: '50%',
+								transform: 'translateY(-50%)',
+								color: '#2563eb',
+								opacity: 0.85,
+								fontSize: 22,
+								display: 'flex',
+								alignItems: 'center',
+								zIndex: 2,
+							}}>
+								<svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path fill="#2563eb" d="M12 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm6-2V9a6 6 0 1 0-12 0v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2Zm-2 0H8V9a4 4 0 1 1 8 0v6Z"/></svg>
+							</span>
+							<input
+								type="password"
+								placeholder="************"
+								value={password}
+								onChange={e => setPassword(e.target.value)}
+								style={{
+									width: '100%',
+									padding: '14px 16px 14px 48px',
+									border: '1.5px solid #fff',
+									borderRadius: 8,
+									background: 'rgba(255,255,255,0.10)',
+									color: '#fff',
+									fontSize: 18,
+									outline: 'none',
+									marginBottom: 0,
+									boxSizing: 'border-box',
+									fontWeight: 400,
+									letterSpacing: 1,
+								}}
+								autoComplete="current-password"
+								required
+							/>
+						</div>
+						<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, marginTop: 2 }}>
+							<label style={{ color: '#fff', opacity: 0.85, fontSize: 15, display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+								<input type="checkbox" style={{ marginRight: 6, accentColor: '#2563eb' }} />
+								Remember Me
+							</label>
+							<a href="#" style={{ color: '#60a5fa', fontSize: 15, textDecoration: 'none', opacity: 0.95 }}>Forgot Password?</a>
+						</div>
+						{error && <div style={{ color: '#e53e3e', marginBottom: 12, fontWeight: 500, textAlign: 'center' }}>{error}</div>}
+						{success && <div style={{ color: '#38a169', marginBottom: 12, fontWeight: 500, textAlign: 'center' }}>{success}</div>}
+						<button
+							type="submit"
+							style={{
+								width: '100%',
+								padding: '12px 0',
+								borderRadius: 24,
+								border: 'none',
+								background: 'linear-gradient(90deg, #2563eb 0%, #60a5fa 100%)',
+								color: '#fff',
+								fontSize: 20,
+								fontWeight: 500,
+								boxShadow: '0 0 16px 2px #2563eb55',
+								cursor: 'pointer',
+								transition: 'background 0.2s',
+								marginTop: 8,
+								marginBottom: 0,
+								letterSpacing: 1,
+							}}
+						>
+							Login
+						</button>
+						<div style={{ marginTop: 18, textAlign: 'center' }}>
+							<span style={{ color: '#fff', opacity: 0.85, fontSize: 15 }}>
+								Don't have an account?{' '}
+								<button type="button" style={{ color: '#60a5fa', background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, textDecoration: 'underline', padding: 0 }} onClick={() => { setIsSignUp(true); setError(''); setSuccess(''); }}>Sign Up</button>
+							</span>
+						</div>
+					</form>
+				)}
 			</div>
 		</div>
 	);

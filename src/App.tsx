@@ -1,8 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import TopNav from './components/TopNav';
 import Gallery from './components/Gallery';
+import PortfolioGallery from './components/PortfolioGallery';
+import TodoApp from './pages/TodoApp';
 import Login from './components/Login';
+import LandingPage from './components/LandingPage';
+import ProjectManager from './components/ProjectManager';
 
 type Project = {
   id: number;
@@ -66,13 +71,14 @@ const initialProjects: Project[] = [
 
 type User = {
   username: string;
-  password: string;
   email?: string;
 };
 
-function App() {
+function MainApp() {
   const [wiggleBtn, setWiggleBtn] = useState<string | null>(null);
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
+  // const [showPortfolio, setShowPortfolio] = useState(false);
+  const navigate = useNavigate();
   // Login logic
   const handleLogin = (user: User) => {
     setLoggedInUser(user);
@@ -85,7 +91,7 @@ function App() {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         if (payload && payload.username) {
-          setLoggedInUser({ username: payload.username, email: payload.email || '', password: '' });
+          setLoggedInUser({ username: payload.username, email: payload.email || '' });
         }
       } catch {
         localStorage.removeItem('token');
@@ -186,9 +192,18 @@ function App() {
     );
   };
 
-  // Top projects
-  const sortedByLikes = [...projects].sort((a, b) => b.likes - a.likes);
-  const topProjects = sortedByLikes.slice(0, 4);
+  // Handle click on Portfolio Website project
+  const handleProjectClick = (project: Project) => {
+    if (project.title === 'Portfolio Website') {
+      navigate('/portfolio');
+    } else if (project.title === 'Todo List') {
+      navigate('/todo');
+    }
+  };
+
+  // Top projects by net score (likes - dislikes)
+  const sortedByNetScore = [...projects].sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes));
+  const topProjects = sortedByNetScore.slice(0, 4);
 
   // Scroll to contact
   const handleContactNavClick = (e: React.MouseEvent) => {
@@ -199,141 +214,156 @@ function App() {
   };
 
   if (!loggedInUser) {
-    return (
-      <Login
-        onLogin={handleLogin}
-      />
-    );
+    return <Login onLogin={handleLogin} />;
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%)',
-    }}>
-      {/* Sidebar */}
-      <Sidebar
-        wiggleBtn={wiggleBtn}
-        setWiggleBtn={setWiggleBtn}
-        handleUploadClick={handleUploadClick}
-        fileInputRef={fileInputRef}
-        handleFileChange={handleFileChange}
-        uploadPopup={uploadPopup}
-        uploadedFile={uploadedFile}
-        uploadPopupVisible={uploadPopupVisible}
-        setChatOpen={setChatOpen}
-        setDropdownOpen={setDropdownOpen}
-      />
-      {/* Main content area */}
-      <div style={{ flex: 1 }}>
-        {/* Top Navigation Bar */}
-        <TopNav
-          showAll={showAll}
-          setShowAll={setShowAll}
-          dropdownOpen={dropdownOpen}
-          setDropdownOpen={setDropdownOpen}
-          setHoveredIndex={setHoveredIndex}
-          getDropdownItemStyle={getDropdownItemStyle}
-          handleContactNavClick={handleContactNavClick}
-          onLogout={handleLogout}
-          loggedInUser={loggedInUser}
-        />
-        {/* Gallery Section */}
-        <Gallery
-          projects={projects}
-          topProjects={topProjects}
-          showAll={showAll}
-          handleLike={handleLike}
-          handleDislike={handleDislike}
-        />
-        {/* Contact section at the bottom */}
-        <div ref={contactRef} id="contact" style={{
-          margin: '64px auto 0 auto',
-          maxWidth: 480,
-          padding: '32px 24px',
-          borderRadius: 24,
-          background: 'linear-gradient(120deg, #e0e7ef 0%, #f8fafc 100%)',
-          boxShadow: '0 4px 24px rgba(56, 89, 146, 0.08)',
-          textAlign: 'center',
-        }}>
-          <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 12, color: '#2d3748', letterSpacing: 0.5 }}>Contact Us</h2>
-          <p style={{ fontSize: 18, color: '#4a5568', marginBottom: 16 }}>
-            We'd love to hear from you! Reach out via any of the methods below:
-          </p>
-          <div style={{ fontSize: 16, color: '#2d3748', lineHeight: 1.7 }}>
-            <div><strong>Email:</strong> <a href="mailto:contact@example.com" style={{ color: '#3182ce', textDecoration: 'underline' }}>contact@example.com</a></div>
-            <div><strong>Phone:</strong> <a href="tel:+1234567890" style={{ color: '#3182ce', textDecoration: 'underline' }}>+1 (234) 567-890</a></div>
-            <div><strong>Address:</strong> 123 Main St, City, Country</div>
-          </div>
-        </div>
-        {/* Chat Popup */}
-        {chatOpen && (
-          <div
-            style={{
-              position: 'fixed',
-              bottom: 40,
-              left: 120,
-              width: 320,
-              background: '#fff',
-              borderRadius: 12,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-              zIndex: 100,
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{ background: '#f7971e', color: '#fff', padding: '0.75rem 1rem', fontWeight: 600, fontSize: '1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              Chat Bot
-              <button onClick={() => setChatOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer' }}>×</button>
-            </div>
-            <div style={{ flex: 1, padding: '1rem', background: '#f9fafb', minHeight: 120, maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {chatMessages.map((msg, idx) => (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <div style={{
+            display: 'flex',
+            minHeight: '100vh',
+            background: 'linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%)',
+          }}>
+            {/* Sidebar */}
+            <Sidebar
+              wiggleBtn={wiggleBtn}
+              setWiggleBtn={setWiggleBtn}
+              handleUploadClick={handleUploadClick}
+              fileInputRef={fileInputRef}
+              handleFileChange={handleFileChange}
+              uploadPopup={uploadPopup}
+              uploadedFile={uploadedFile}
+              uploadPopupVisible={uploadPopupVisible}
+              setChatOpen={setChatOpen}
+              setDropdownOpen={setDropdownOpen}
+            />
+            {/* Main content area */}
+            <div style={{ flex: 1 }}>
+              {/* Top Navigation Bar */}
+              <TopNav
+                showAll={showAll}
+                setShowAll={setShowAll}
+                dropdownOpen={dropdownOpen}
+                setDropdownOpen={setDropdownOpen}
+                setHoveredIndex={setHoveredIndex}
+                getDropdownItemStyle={getDropdownItemStyle}
+                handleContactNavClick={handleContactNavClick}
+                onLogout={handleLogout}
+                loggedInUser={loggedInUser}
+              />
+              {/* Gallery Section */}
+              <Gallery
+                projects={projects}
+                topProjects={topProjects}
+                showAll={showAll}
+                handleLike={handleLike}
+                handleDislike={handleDislike}
+                onProjectClick={handleProjectClick}
+              />
+              {/* Contact section at the bottom */}
+              <div ref={contactRef} id="contact" style={{
+                margin: '64px auto 0 auto',
+                maxWidth: 480,
+                padding: '32px 24px',
+                borderRadius: 24,
+                background: 'linear-gradient(120deg, #e0e7ef 0%, #f8fafc 100%)',
+                boxShadow: '0 4px 24px rgba(56, 89, 146, 0.08)',
+                textAlign: 'center',
+              }}>
+                <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 12, color: '#2d3748', letterSpacing: 0.5 }}>Contact Us</h2>
+                <p style={{ fontSize: 18, color: '#4a5568', marginBottom: 16 }}>
+                  We'd love to hear from you! Reach out via any of the methods below:
+                </p>
+                <div style={{ fontSize: 16, color: '#2d3748', lineHeight: 1.7 }}>
+                  <div><strong>Email:</strong> <a href="mailto:contact@example.com" style={{ color: '#3182ce', textDecoration: 'underline' }}>contact@example.com</a></div>
+                  <div><strong>Phone:</strong> <a href="tel:+1234567890" style={{ color: '#3182ce', textDecoration: 'underline' }}>+1 (234) 567-890</a></div>
+                  <div><strong>Address:</strong> 123 Main St, City, Country</div>
+                </div>
+              </div>
+              {/* Chat Popup */}
+              {chatOpen && (
                 <div
-                  key={idx}
                   style={{
+                    position: 'fixed',
+                    bottom: 40,
+                    left: 120,
+                    width: 320,
+                    background: '#fff',
+                    borderRadius: 12,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                    zIndex: 100,
                     display: 'flex',
-                    alignItems: 'center',
-                    alignSelf: msg.from === 'bot' ? 'flex-start' : 'flex-end',
-                    background: msg.from === 'bot' ? '#e0eafc' : '#d1fae5',
-                    color: '#222',
-                    borderRadius: 8,
-                    padding: '0.5rem 0.9rem',
-                    marginBottom: 2,
-                    maxWidth: '80%',
-                    gap: 8,
+                    flexDirection: 'column',
+                    overflow: 'hidden',
                   }}
                 >
-                  {msg.from === 'bot' && (
-                    <span style={{ fontSize: 20, marginRight: 4 }} role="img" aria-label="bot">🤖</span>
-                  )}
-                  {msg.from === 'user' && (
-                    <span style={{ fontSize: 20, marginRight: 4 }} role="img" aria-label="user">🧑</span>
-                  )}
-                  <span>{msg.text}</span>
+                  <div style={{ background: '#f7971e', color: '#fff', padding: '0.75rem 1rem', fontWeight: 600, fontSize: '1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    Chat Bot
+                    <button onClick={() => setChatOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer' }}>×</button>
+                  </div>
+                  <div style={{ flex: 1, padding: '1rem', background: '#f9fafb', minHeight: 120, maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {chatMessages.map((msg, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          alignSelf: msg.from === 'bot' ? 'flex-start' : 'flex-end',
+                          background: msg.from === 'bot' ? '#e0eafc' : '#d1fae5',
+                          color: '#222',
+                          borderRadius: 8,
+                          padding: '0.5rem 0.9rem',
+                          marginBottom: 2,
+                          maxWidth: '80%',
+                          gap: 8,
+                        }}
+                      >
+                        {msg.from === 'bot' && (
+                          <span style={{ fontSize: 20, marginRight: 4 }} role="img" aria-label="bot">🤖</span>
+                        )}
+                        {msg.from === 'user' && (
+                          <span style={{ fontSize: 20, marginRight: 4 }} role="img" aria-label="user">🧑</span>
+                        )}
+                        <span>{msg.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', borderTop: '1px solid #eee', background: '#fff' }}>
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={e => setChatInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleChatSend(); }}
+                      placeholder="Type your message..."
+                      style={{ flex: 1, border: 'none', padding: '0.75rem', fontSize: '1rem', outline: 'none', background: 'none' }}
+                    />
+                    <button
+                      onClick={handleChatSend}
+                      style={{ background: '#43e97b', color: '#fff', border: 'none', padding: '0 1.2rem', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', borderRadius: 0 }}
+                    >Send</button>
+                  </div>
                 </div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', borderTop: '1px solid #eee', background: '#fff' }}>
-              <input
-                type="text"
-                value={chatInput}
-                onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleChatSend(); }}
-                placeholder="Type your message..."
-                style={{ flex: 1, border: 'none', padding: '0.75rem', fontSize: '1rem', outline: 'none', background: 'none' }}
-              />
-              <button
-                onClick={handleChatSend}
-                style={{ background: '#43e97b', color: '#fff', border: 'none', padding: '0 1.2rem', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', borderRadius: 0 }}
-              >Send</button>
+              )}
             </div>
           </div>
-        )}
-      </div>
-    </div>
+        }
+      />
+  <Route path="/manage-projects" element={<ProjectManager />} />
+  <Route path="/portfolio" element={<PortfolioGallery onBack={() => navigate('/')} />} />
+  <Route path="/todo" element={<TodoApp />} />
+  <Route path="/landing" element={<LandingPage />} />
+      {/* You can add more routes for other projects here */}
+    </Routes>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <Router>
+      <MainApp />
+    </Router>
+  );
+}

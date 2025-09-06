@@ -2,7 +2,6 @@ import React from 'react';
 
 interface User {
   username: string;
-  password: string;
   email?: string;
 }
 
@@ -49,6 +48,7 @@ const TopNav: React.FC<TopNavProps> = ({
         { label: 'Users', href: '#' },
         { label: 'Services', href: '#' },
         { label: 'Contact', href: '#contact' },
+        { label: 'Manage Projects', href: '/manage-projects' },
       ].map((item) => (
         <a
           key={item.label}

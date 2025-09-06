@@ -1,0 +1,98 @@
+[
+  {
+    "id": 1,
+    "text": "Responses catch-up",
+    "completed": false,
+    "user": "jeka",
+    "createdAt": "2025-09-06T07:30:00.000Z",
+    "dueDate": "2025-09-06T08:30:00.000Z"
+  },
+  {
+    "id": 101,
+    "text": "Morning Review",
+    "completed": false,
+    "user": "mamuka",
+    "createdAt": "2025-09-06T08:00:00.000Z",
+    "dueDate": "2025-09-06T08:30:00.000Z"
+  },
+  {
+    "id": 102,
+    "text": "Team Standup Meeting",
+    "completed": false,
+    "user": "mamuka",
+    "createdAt": "2025-09-06T09:30:00.000Z",
+    "dueDate": "2025-09-06T10:00:00.000Z"
+  },
+  {
+    "id": 105,
+    "text": "Client Call",
+    "completed": false,
+    "user": "mamuka",
+    "createdAt": "2025-09-08T11:00:00.000Z",
+    "dueDate": "2025-09-08T12:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "text": "Reels & Guides Brainstorm Thread",
+    "completed": false,
+    "user": "jeka",
+    "createdAt": "2025-09-06T09:00:00.000Z",
+    "dueDate": "2025-09-06T10:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "text": "Lunch",
+    "completed": false,
+    "user": "jeka",
+    "createdAt": "2025-09-06T12:00:00.000Z",
+    "dueDate": "2025-09-06T12:45:00.000Z"
+  },
+  {
+    "id": 4,
+    "text": "Schedule next week's posts",
+    "completed": false,
+    "user": "jeka",
+    "createdAt": "2025-09-07T09:00:00.000Z",
+    "dueDate": "2025-09-07T10:30:00.000Z"
+  },
+  {
+    "id": 5,
+    "text": "Bi-Weekly Content Check-In",
+    "completed": false,
+    "user": "jeka",
+    "createdAt": "2025-05-25T11:00:00.000Z",
+    "dueDate": "2025-05-25T12:00:00.000Z"
+  },
+  {
+    "id": 6,
+    "text": "Todoist Office Hours: GTD x Todoist",
+    "completed": false,
+    "user": "jeka",
+    "createdAt": "2025-06-08T09:00:00.000Z",
+    "dueDate": "2025-06-08T10:00:00.000Z"
+  },
+  {
+    "id": 1757148129511,
+    "text": "new for tomorrow",
+    "completed": false,
+    "user": "mamuka",
+    "createdAt": "2025-09-06T08:42:09.511Z",
+    "dueDate": "2025-09-07T23:41"
+  },
+  {
+    "id": 1757182374481,
+    "text": "zxcxzc",
+    "completed": false,
+    "user": "mamuka",
+    "createdAt": "2025-09-06T18:12:54.481Z",
+    "dueDate": "2025-10-06T01:01"
+  },
+  {
+    "id": 1757184421522,
+    "text": "Aniutochka Albetovna Rudyaga",
+    "completed": false,
+    "user": "mamuka",
+    "createdAt": "2025-09-06T18:47:01.522Z",
+    "dueDate": "2025-10-09T15:01"
+  }
+]
