@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TaskCard from '../components/TaskCard';
 import Button from '../components/Button';
@@ -15,6 +15,7 @@ const TodoApp: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string>('');
   const [addError, setAddError] = useState('');
+  const upcomingRef = useRef<HTMLDivElement>(null);
   // Helper to set date for column
   const setDateForColumn = (col: string) => {
     const now = new Date();
@@ -23,6 +24,9 @@ const TodoApp: React.FC = () => {
     } else if (col === 'Tomorrow') {
       const tomorrow = new Date(now.getTime() + 86400000);
       setDueDate(tomorrow.toISOString().slice(0, 10));
+    } else if (col === 'Upcoming') {
+      const twoDays = new Date(now.getTime() + 2 * 86400000);
+      setDueDate(twoDays.toISOString().slice(0, 10));
     } else {
       setDueDate(''); // Upcoming: let user pick any date
     }
@@ -36,6 +40,8 @@ const TodoApp: React.FC = () => {
   const [editDueId, setEditDueId] = useState<number | null>(null);
   const [editDueDate, setEditDueDate] = useState('');
   const [editDueTime, setEditDueTime] = useState('');
+  const [notificationEmail, setNotificationEmail] = useState('');
+  const [emailStatus, setEmailStatus] = useState('');
 
   // Fetch todos from backend
   useEffect(() => {
@@ -68,6 +74,18 @@ const TodoApp: React.FC = () => {
         }
       });
   }, [navigate]);
+
+  // Fetch user's email on mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    fetch('http://localhost:4000/api/profile', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.user && data.user.email) setNotificationEmail(data.user.email);
+      });
+  }, []);
 
   // Add todo
   const handleAdd = async (e: React.FormEvent) => {
@@ -169,9 +187,28 @@ const TodoApp: React.FC = () => {
     setTodos(todos.filter(t => t.id !== id));
   };
 
+  // Save email to backend
+  const handleSaveEmail = async () => {
+    setEmailStatus('');
+    const token = localStorage.getItem('token');
+    const res = await fetch('http://localhost:4000/api/profile/email', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ email: notificationEmail }),
+    });
+    if (res.ok) {
+      setEmailStatus('Email saved!');
+    } else {
+      setEmailStatus('Failed to save email.');
+    }
+  };
+
   // Group todos
-  const grouped: Record<string, Todo[]> = { Today: [], Tomorrow: [], Upcoming: [] };
-  const columns = ['Today', 'Tomorrow', 'Upcoming'];
+  const grouped: Record<string, Todo[]> = { Overdue: [], Today: [], Tomorrow: [], Upcoming: [] };
+  const columns = ['Overdue', 'Today', 'Tomorrow', 'Upcoming'];
   todos.forEach(todo => {
     if (!todo.dueDate) {
       grouped.Upcoming.push(todo);
@@ -179,7 +216,8 @@ const TodoApp: React.FC = () => {
     }
     const due = new Date(todo.dueDate);
     const now = new Date();
-    if (due.toDateString() === now.toDateString()) grouped.Today.push(todo);
+    if (due < now && !todo.completed) grouped.Overdue.push(todo);
+    else if (due.toDateString() === now.toDateString()) grouped.Today.push(todo);
     else if (due.toDateString() === new Date(now.getTime() + 86400000).toDateString()) grouped.Tomorrow.push(todo);
     else grouped.Upcoming.push(todo);
   });
@@ -191,8 +229,63 @@ const TodoApp: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [addError]);
 
+  // Animation for button (rotating)
+  useEffect(() => {
+    const btn = document.getElementById('upcoming-btn');
+    if (!btn) return;
+    btn.style.animation = 'rotateAlive 1.2s linear infinite';
+    return () => {
+      btn.style.animation = '';
+    };
+  }, [grouped.Upcoming.length]);
+
   return (
     <div style={{ maxWidth: 1200, margin: '32px auto', padding: 0, background: 'linear-gradient(135deg, #e0eafc 0%, #43e97b22 100%)', borderRadius: 24, boxShadow: '0 4px 24px #2563eb22', minHeight: '80vh', position: 'relative' }}>
+      {/* Floating Upcoming Button - upper right with rotation animation */}
+      {grouped.Upcoming.length > 0 && (
+        <>
+          <style>{`
+            .rotateAlive {
+              animation: rotateAlive 1.2s linear infinite;
+            }
+            @keyframes rotateAlive {
+              0% { transform: rotate(-10deg) scale(1.05); }
+              25% { transform: rotate(10deg) scale(1.12); }
+              50% { transform: rotate(-10deg) scale(1.05); }
+              75% { transform: rotate(10deg) scale(1.12); }
+              100% { transform: rotate(-10deg) scale(1.05); }
+            }
+          `}</style>
+          <button
+            id="upcoming-btn"
+            className="rotateAlive"
+            onClick={() => {
+              upcomingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }}
+            style={{
+              position: 'fixed',
+              right: 32,
+              top: 32,
+              zIndex: 100,
+              background: 'linear-gradient(90deg,#fbbf24,#2563eb)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 18,
+              padding: '1rem 2rem',
+              fontWeight: 700,
+              fontSize: 18,
+              boxShadow: '0 4px 16px #2563eb33',
+              cursor: 'pointer',
+              transition: 'background 0.18s, transform 0.18s',
+              letterSpacing: 1,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+          >
+            👋 Upcoming Tasks
+          </button>
+        </>
+      )}
       {error && (
         <div style={{ background: '#ffe0e0', color: '#e53e3e', padding: '18px', borderRadius: 12, margin: '32px', fontWeight: 600, fontSize: 20, textAlign: 'center', boxShadow: '0 2px 8px #e53e3e22' }}>
           {error}
@@ -255,56 +348,90 @@ const TodoApp: React.FC = () => {
           )}
         </div>
       </form>
-      <div style={{ display: 'flex', gap: 0, marginTop: 10, alignItems: 'stretch', justifyContent: 'center', minHeight: 400 }}>
-        {columns.map((col, idx) => (
-          <React.Fragment key={col}>
-            <div style={{
+      <div style={{
+        display: 'flex',
+        gap: 32,
+        marginTop: 24,
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        minHeight: 400,
+        width: '100%',
+        maxWidth: 1300,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        flexWrap: 'wrap',
+      }}>
+        {columns.map((col) => (
+          <div
+            key={col}
+            ref={col === 'Upcoming' ? upcomingRef : undefined}
+            style={{
               flex: 1,
               minWidth: 320,
-              padding: '0 16px',
+              maxWidth: 340,
+              padding: '0 16px 24px 16px',
               display: 'flex',
               flexDirection: 'column',
-              background: col === 'Today' ? 'linear-gradient(135deg, #e0f7ef 0%, #43e97b22 100%)'
+              background: col === 'Overdue' ? 'linear-gradient(135deg, #ffe0e0 0%, #e53e3e22 100%)'
+                : col === 'Today' ? 'linear-gradient(135deg, #e0f7ef 0%, #43e97b22 100%)'
                 : col === 'Tomorrow' ? 'linear-gradient(135deg, #e0eafc 0%, #2563eb22 100%)'
                 : 'linear-gradient(135deg, #fffbe6 0%, #fbbf2422 100%)',
               borderRadius: 18,
               boxShadow: '0 2px 12px #2563eb11',
               marginBottom: 12,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-                <h3 style={{ fontSize: 24, fontWeight: 800, color: col === 'Today' ? '#43e97b' : col === 'Tomorrow' ? '#2563eb' : '#fbbf24', letterSpacing: 1 }}>{col} {col === 'Today' ? '💪' : col === 'Tomorrow' ? '🎉' : ''}</h3>
+              minHeight: 420,
+              alignItems: 'stretch',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <h3 style={{ fontSize: 24, fontWeight: 800, color: col === 'Overdue' ? '#e53e3e' : col === 'Today' ? '#43e97b' : col === 'Tomorrow' ? '#2563eb' : '#fbbf24', letterSpacing: 1 }}>{col} {col === 'Overdue' ? '⚠️' : col === 'Today' ? '💪' : col === 'Tomorrow' ? '🎉' : ''}</h3>
+              {col !== 'Overdue' && (
                 <button onClick={() => setDateForColumn(col)} style={{ background: 'linear-gradient(90deg,#43e97b,#38f9d7)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.3rem 1.1rem', fontWeight: 600, fontSize: 15, cursor: 'pointer', boxShadow: '0 2px 8px #43e97b22', marginLeft: 8 }}>+ Add Task</button>
-              </div>
-              {grouped[col].length === 0 && <div style={{ color: '#888', textAlign: 'center', marginTop: 18 }}>No tasks</div>}
-              {grouped[col].map((todo: Todo) => (
-                <div key={todo.id}>
-                  {editDueId === todo.id ? (
-                    <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} style={{ fontSize: 13, padding: '2px 6px', borderRadius: 6, border: '1px solid #ccc' }} />
-                      <input type="time" value={editDueTime} onChange={e => setEditDueTime(e.target.value)} style={{ fontSize: 13, padding: '2px 6px', borderRadius: 6, border: '1px solid #ccc' }} />
-                      <button onClick={() => handleSaveDue(todo.id)} style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 2px 8px #2563eb22' }}>Save</button>
-                      <button onClick={() => setEditDueId(null)} style={{ background: '#eee', color: '#222', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', fontWeight: 600, fontSize: 13, cursor: 'pointer', marginLeft: 4, boxShadow: '0 2px 8px #2222' }}>Cancel</button>
-                    </div>
-                  ) : (
-                    <TaskCard
-                      text={todo.text}
-                      completed={todo.completed}
-                      onToggle={() => handleToggle(todo.id)}
-                      onDelete={() => handleDelete(todo.id)}
-                      onEditDue={() => handleEditDue(todo.id, todo.dueDate || '')}
-                      dueDate={todo.dueDate ? new Date(todo.dueDate).toLocaleString() : undefined}
-                      createdAt={todo.createdAt ? new Date(todo.createdAt).toLocaleString() : undefined}
-                      tag={col}
-                    />
-                  )}
-                </div>
-              ))}
+              )}
             </div>
-            {idx < columns.length - 1 && (
-              <div style={{ width: 4, background: '#b3c6e6', height: 'auto', minHeight: 400, margin: '0 8px', borderRadius: 2, alignSelf: 'stretch', boxShadow: '0 0 2px #b3c6e6' }} />
-            )}
-          </React.Fragment>
+            {grouped[col].length === 0 && <div style={{ color: '#888', textAlign: 'center', marginTop: 18 }}>No tasks</div>}
+            {grouped[col].map((todo: Todo) => (
+              <div key={todo.id} style={{ marginBottom: 16 }}>
+                {editDueId === todo.id ? (
+                  <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} style={{ fontSize: 13, padding: '2px 6px', borderRadius: 6, border: '1px solid #ccc' }} />
+                    <input type="time" value={editDueTime} onChange={e => setEditDueTime(e.target.value)} style={{ fontSize: 13, padding: '2px 6px', borderRadius: 6, border: '1px solid #ccc' }} />
+                    <button onClick={() => handleSaveDue(todo.id)} style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 2px 8px #2563eb22' }}>Save</button>
+                    <button onClick={() => setEditDueId(null)} style={{ background: '#eee', color: '#222', border: 'none', borderRadius: 6, padding: '0.2rem 0.7rem', fontWeight: 600, fontSize: 13, cursor: 'pointer', marginLeft: 4, boxShadow: '0 2px 8px #2222' }}>Cancel</button>
+                  </div>
+                ) : (
+                  <TaskCard
+                    text={todo.text}
+                    completed={todo.completed}
+                    onToggle={() => handleToggle(todo.id)}
+                    onDelete={() => handleDelete(todo.id)}
+                    onEditDue={() => handleEditDue(todo.id, todo.dueDate || '')}
+                    dueDate={todo.dueDate ? new Date(todo.dueDate).toLocaleString() : undefined}
+                    createdAt={todo.createdAt ? new Date(todo.createdAt).toLocaleString() : undefined}
+                    tag={col}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
         ))}
+      </div>
+      <div style={{ position: 'relative', top: 0, left: 0, maxWidth: 420, margin: '32px 0 0 32px', background: 'linear-gradient(90deg,#f8fafc,#e0eafc)', borderRadius: 14, boxShadow: '0 2px 12px #2563eb11', padding: '24px 24px 18px 24px', display: 'flex', flexDirection: 'column', gap: 12, zIndex: 10 }}>
+        <h3 style={{ fontSize: 22, fontWeight: 700, color: '#2563eb', marginBottom: 6 }}>Notification Email</h3>
+        <input
+          type="email"
+          value={notificationEmail}
+          onChange={e => setNotificationEmail(e.target.value)}
+          placeholder="Enter your email for reminders"
+          style={{ fontSize: 17, padding: '10px 14px', borderRadius: 8, border: '1px solid #b3c6e6', background: '#fff', marginBottom: 8 }}
+        />
+        <button
+          onClick={handleSaveEmail}
+          style={{ background: 'linear-gradient(90deg,#2563eb,#43e97b)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.7rem 1.4rem', fontWeight: 600, fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 2px 8px #2563eb22', transition: 'background 0.2s', marginBottom: 4 }}
+        >
+          Save Email
+        </button>
+        {emailStatus && <div style={{ color: emailStatus === 'Email saved!' ? '#38a169' : '#e53e3e', fontWeight: 500, fontSize: 16 }}>{emailStatus}</div>}
       </div>
       <hr style={{ margin: '32px 0 16px 0', border: 'none', borderTop: '2px solid #2563eb22' }} />
       <div style={{ marginTop: 16, textAlign: 'center', color: '#2563eb', fontWeight: 500, fontSize: 17, textShadow: '0 2px 8px #2563eb22' }}>

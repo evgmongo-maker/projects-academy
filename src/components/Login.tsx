@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 type User = {
@@ -203,6 +202,45 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 									letterSpacing: 0.5,
 								}}
 								autoComplete="username"
+								required
+							/>
+						</div>
+						<div style={{ position: 'relative', marginBottom: 24 }}>
+							{/* Email icon */}
+							<span style={{
+								position: 'absolute',
+								left: 16,
+								top: '50%',
+								transform: 'translateY(-50%)',
+								color: '#2563eb',
+								opacity: 0.85,
+								fontSize: 22,
+								display: 'flex',
+								alignItems: 'center',
+								zIndex: 2,
+							}}>
+								<svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path fill="#2563eb" d="M4 4h16v16H4V4zm8 8l8-5H4l8 5zm0 2l-8-5v10h16V9l-8 5z"/></svg>
+							</span>
+							<input
+								type="email"
+								placeholder="Email for notifications"
+								value={email}
+								onChange={e => setEmail(e.target.value)}
+								style={{
+									width: '100%',
+									padding: '14px 16px 14px 48px',
+									border: '1.5px solid #fff',
+									borderRadius: 8,
+									background: 'rgba(255,255,255,0.10)',
+									color: '#fff',
+									fontSize: 18,
+									outline: 'none',
+									marginBottom: 0,
+									boxSizing: 'border-box',
+									fontWeight: 400,
+									letterSpacing: 0.5,
+								}}
+								autoComplete="email"
 								required
 							/>
 						</div>

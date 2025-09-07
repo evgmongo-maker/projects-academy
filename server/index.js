@@ -1,4 +1,5 @@
 const express = require('express');
+const twilio = require('twilio');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
@@ -6,6 +7,45 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const app = express();
+
+// Twilio setup (replace with your credentials)
+const TWILIO_ACCOUNT_SID = 'YOUR_TWILIO_ACCOUNT_SID';
+const TWILIO_AUTH_TOKEN = 'YOUR_TWILIO_AUTH_TOKEN';
+const TWILIO_WHATSAPP_FROM = 'whatsapp:+14155238886'; // Twilio sandbox WhatsApp number
+const USER_WHATSAPP_TO = 'whatsapp:+972542050802';
+const twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+
+// Function to send WhatsApp message
+function sendWhatsAppMessage(body) {
+  return twilioClient.messages.create({
+    from: TWILIO_WHATSAPP_FROM,
+    to: USER_WHATSAPP_TO,
+    body,
+  });
+}
+
+// Periodic check for tasks due in one hour
+setInterval(() => {
+  const todos = readTodos();
+  const now = new Date();
+  todos.forEach(todo => {
+    if (!todo.dueDate || todo.completed) return;
+    const due = new Date(todo.dueDate);
+    const diffMs = due - now;
+    // If due in 1 hour (+/- 2 min window), and not already notified
+    if (diffMs > 0 && diffMs < 62 * 60 * 1000 && !todo.whatsappNotified) {
+      sendWhatsAppMessage(`Reminder: Your task "${todo.text}" is due at ${due.toLocaleString()}`)
+        .then(() => {
+          todo.whatsappNotified = true;
+          writeTodos(todos);
+          console.log('WhatsApp reminder sent for task:', todo.text);
+        })
+        .catch(err => {
+          console.error('Failed to send WhatsApp:', err.message);
+        });
+    }
+  });
+}, 60 * 1000); // Check every minute
 app.use(cors());
 app.use(express.json());
 const PORT = 4000;
